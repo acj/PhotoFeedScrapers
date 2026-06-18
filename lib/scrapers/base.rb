@@ -1,4 +1,5 @@
 require "nokogiri"
+require "cgi"
 require "time"
 require_relative "../http"
 require_relative "../photo_feed_item"
@@ -90,7 +91,10 @@ module Scrapers
 
     def self.clean(text)
       return nil if text.nil?
-      text.gsub(/\s+/, " ").strip
+      # Decode HTML entities (e.g. "&#39;", "&amp;") that survive source parsing,
+      # often because the upstream markup double-encoded them, then normalize
+      # whitespace.
+      CGI.unescapeHTML(text).gsub(/\s+/, " ").strip
     end
 
     def self.absolute(url, base)

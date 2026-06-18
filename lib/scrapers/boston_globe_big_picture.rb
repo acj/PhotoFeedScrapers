@@ -53,7 +53,7 @@ module Scrapers
         next nil unless src
         next nil unless src.match?(/\.(jpe?g|png|webp)/i)
 
-        caption = fig.at_css(PHOTO_CAPTION_SELECTOR)&.text
+        caption = caption_text(fig.at_css(PHOTO_CAPTION_SELECTOR))
         PhotoFeedItem.new(
           source:    SOURCE,
           title:     headline,
@@ -63,6 +63,15 @@ module Scrapers
           pub_date:  pub_date
         )
       end
+    end
+
+    # The description and the photo credit live in separate child elements of
+    # the figcaption. Calling #text on the figcaption concatenates them with no
+    # separator ("... in Tehran.AP Photo/..."), so join the children's text with
+    # a space instead.
+    def self.caption_text(figcaption)
+      return nil unless figcaption
+      figcaption.children.map { |n| n.text.strip }.reject(&:empty?).join(" ")
     end
 
     def self.extract_pub_date(doc)
