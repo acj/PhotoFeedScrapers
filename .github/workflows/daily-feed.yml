@@ -1,0 +1,72 @@
+name: Daily feed
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: daily-feed
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  TARGET_REPO: acj/acj.github.com
+  TARGET_SUBDIR: today-in-pictures
+  FEED_SELF_URL: https://acj.github.io/today-in-pictures/feed.xml
+  DB_PATH: .state/photofeeds.sqlite3
+  OUTPUT_PATH: feed.xml
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Check out scrapers
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      # If the cache is ever evicted (7-day LRU), the feed rebuilds from whatever items the scrapers currently return
+      - name: Restore feed database
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.DB_PATH }}
+          key: photofeeds-db-${{ github.run_id }}
+          restore-keys: |
+            photofeeds-db-
+
+      - name: Scrape and build feed
+        run: bundle exec ruby bin/scrape
+
+      - name: Check out target Pages repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.TARGET_REPO }}
+          token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          path: target
+
+      - name: Stage feed and viewer
+        run: |
+          dest="target/${TARGET_SUBDIR}"
+          mkdir -p "$dest"
+          cp "${OUTPUT_PATH}" "$dest/feed.xml"
+          cp public/index.html "$dest/index.html"
+
+      - name: Commit and push if changed
+        working-directory: target
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${TARGET_SUBDIR}/feed.xml" "${TARGET_SUBDIR}/index.html"
+          if git diff --cached --quiet; then
+            echo "No changes to publish."
+            exit 0
+          fi
+          git commit -m "Update photo feed ($(date -u +%Y-%m-%d))"
+          git push
