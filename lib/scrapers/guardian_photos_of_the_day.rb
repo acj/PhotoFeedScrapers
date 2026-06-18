@@ -53,8 +53,12 @@ module Scrapers
         description = description.sub(/\.\s*\z/, "") + "."
         parts << description
       end
-      parts << credit if credit && !credit.empty?
-      clean(parts.join(" "))
+
+      text = parts.join(" ")
+      if credit && !credit.empty?
+        text = text.empty? ? credit : "#{text} — #{credit}"
+      end
+      clean(text)
     end
 
     def self.upscale(url)
