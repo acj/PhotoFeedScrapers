@@ -25,16 +25,26 @@ module Scrapers
         next nil unless src
         next nil unless src.match?(/\.(jpe?g|png|webp)/i)
 
-        caption = fig.at_css(PHOTO_CAPTION_SELECTOR)&.text
+        caption = caption_text(fig.at_css(PHOTO_CAPTION_SELECTOR))
         PhotoFeedItem.new(
           source:    SOURCE,
           title:     clean(post[:title]),
-          caption:   clean(caption),
+          caption:   caption,
           page_url:  base,
           photo_url: absolute(src, base),
           pub_date:  post[:pub_date]
         )
       end
+    end
+
+    # The caption text and the photo credit are separate child elements of the
+    # figcaption; calling #text runs them together. Join the non-empty parts
+    # with an em dash so the credit and caption are clearly separated.
+    def self.caption_text(figcaption)
+      return nil unless figcaption
+      parts = figcaption.children.map { |n| clean(n.text) }.reject { |s| s.nil? || s.empty? }
+      return nil if parts.empty?
+      parts.join(" — ")
     end
   end
 end
