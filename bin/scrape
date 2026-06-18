@@ -1,0 +1,18 @@
+#!/usr/bin/env ruby
+require "logger"
+$LOAD_PATH.unshift File.expand_path("../lib", __dir__)
+require "runner"
+
+DB_PATH     = ENV.fetch("DB_PATH",     "/data/photofeeds.sqlite3")
+OUTPUT_PATH = ENV.fetch("OUTPUT_PATH", "/data/feed.xml")
+SELF_URL    = ENV["FEED_SELF_URL"] # optional
+
+logger = Logger.new($stdout)
+logger.formatter = proc { |sev, time, _prog, msg| "#{time.iso8601} #{sev} #{msg}\n" }
+
+Runner.new(
+  db_path:     DB_PATH,
+  output_path: OUTPUT_PATH,
+  self_url:    SELF_URL,
+  logger:      logger
+).run

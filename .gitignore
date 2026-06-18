@@ -1,3 +1,7 @@
+# Local scrape artifacts (produced by bin/scrape; published via CI)
+/feed.xml
+/.state/
+
 *.py[cod]
 
 # C extensions
@@ -10,12 +14,10 @@ dist
 build
 eggs
 parts
-bin
 var
 sdist
 develop-eggs
 .installed.cfg
-lib
 lib64
 __pycache__
 

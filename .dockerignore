@@ -1,0 +1,8 @@
+.git
+.gitignore
+*.py
+*.pyc
+*.xml
+README.md*
+LICENSE
+data/
