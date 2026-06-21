@@ -44,8 +44,14 @@ module Scrapers
       location = figcaption.at_css("h2")&.text&.strip
       credit   = figcaption.at_css("small")&.text&.strip
 
-      description_parts = figcaption.children.select(&:text?).map { |n| n.text.strip }.reject(&:empty?)
-      description = description_parts.join(" ")
+      # Build the description from everything except the location (h2) and credit
+      # (small). We can't restrict this to bare text nodes: captions often wrap
+      # phrases in inline elements (e.g. an <a> link like "Messi scored a
+      # hat-trick"), and those are element nodes whose text would otherwise be
+      # dropped entirely.
+      description_node = figcaption.dup
+      description_node.css("h2, small").remove
+      description = description_node.text.strip
 
       parts = []
       parts << "#{location} —" if location && !location.empty?
