@@ -49,9 +49,15 @@ module Scrapers
       # phrases in inline elements (e.g. an <a> link like "Messi scored a
       # hat-trick"), and those are element nodes whose text would otherwise be
       # dropped entirely.
+      #
+      # The same reason we keep <a> means we also pick up the per-slide share
+      # control, so drop it: it renders as a <button>, and as a fallback (when
+      # it's an inline link we'd otherwise preserve) we strip a stray trailing
+      # "Share" label below.
       description_node = figcaption.dup
-      description_node.css("h2, small").remove
+      description_node.css("h2, small, button").remove
       description = description_node.text.strip
+      description = description.sub(/\s*Share\z/, "").strip
 
       parts = []
       parts << "#{location} —" if location && !location.empty?
